@@ -1,7 +1,8 @@
 import { SubjectCourse } from '../types';
 import { THIRD_YEAR_BRANCH_CURRICULUM } from './thirdYearCurriculumData';
+import { FOURTH_YEAR_BRANCH_CURRICULUM } from './fourthYearCurriculumData';
 
-export { THIRD_YEAR_BRANCH_CURRICULUM };
+export { THIRD_YEAR_BRANCH_CURRICULUM, FOURTH_YEAR_BRANCH_CURRICULUM };
 
 export type BranchKey =
   | 'cse'
@@ -1555,11 +1556,23 @@ export function getBranchThirdYearSubjects(branchName: string): SubjectCourse[] 
 }
 
 /**
+ * Returns all fourth year subjects (Semester 7 and Semester 8 combined)
+ * allotted to the specified branch (~10-11 official branch subjects).
+ */
+export function getBranchFourthYearSubjects(branchName: string): SubjectCourse[] {
+  const branchKey = normalizeBranchKey(branchName);
+  const branchData = FOURTH_YEAR_BRANCH_CURRICULUM[branchKey] || FOURTH_YEAR_BRANCH_CURRICULUM.cse;
+  const sem7 = branchData[7] || [];
+  const sem8 = branchData[8] || [];
+  return [...sem7, ...sem8];
+}
+
+/**
  * Returns the official list of subjects for a given branch and semester.
  * If semester is 1 or 2, foundation subjects are used.
  * If semester is 3 or 4, the exact 2nd year branch curriculum is used.
  * If semester is 5 or 6, the exact 3rd year branch curriculum is used.
- * If semester >= 7, capstone/final year curriculum is provided.
+ * If semester is 7 or 8, the exact 4th year branch curriculum is used.
  */
 export function getBranchSemesterSubjects(branchName: string, semester: number): SubjectCourse[] {
   const branchKey = normalizeBranchKey(branchName);
@@ -1580,41 +1593,12 @@ export function getBranchSemesterSubjects(branchName: string, semester: number):
     return THIRD_YEAR_BRANCH_CURRICULUM.cse[semester as 5 | 6] || [];
   }
 
-  if (semester >= 7) {
-
-    // 7th & 8th Sem
-    return [
-      {
-        id: `${branchKey}-${semester}01-major`,
-        code: `${branchKey.toUpperCase()}-${semester}01`,
-        name: 'Major Project Dissertation & Industry Seminar',
-        credits: 8,
-        color: 'emerald',
-        standardTextbook: 'Capstone Project Technical Guidelines',
-        pyqPaperAvailable: true,
-        modules: makeModules('Major Project Dissertation', `${branchKey.toUpperCase()}-${semester}01`),
-      },
-      {
-        id: `${branchKey}-${semester}02-elec`,
-        code: `${branchKey.toUpperCase()}-${semester}02`,
-        name: 'Advanced Domain Specialization & Research',
-        credits: 4,
-        color: 'indigo',
-        standardTextbook: 'IEEE Transactions & Recent Advances',
-        pyqPaperAvailable: true,
-        modules: makeModules('Advanced Domain Specialization', `${branchKey.toUpperCase()}-${semester}02`),
-      },
-      {
-        id: `${branchKey}-${semester}03-ethics`,
-        code: `${branchKey.toUpperCase()}-${semester}03`,
-        name: 'Professional Ethics & Industrial Management',
-        credits: 3,
-        color: 'sky',
-        standardTextbook: 'Professional Ethics and Human Values by R.S. Naagarazan',
-        pyqPaperAvailable: true,
-        modules: makeModules('Professional Ethics & Industrial Management', `${branchKey.toUpperCase()}-${semester}03`),
-      },
-    ];
+  if (semester === 7 || semester === 8) {
+    const fourthYearData = FOURTH_YEAR_BRANCH_CURRICULUM[branchKey] || FOURTH_YEAR_BRANCH_CURRICULUM.cse;
+    if (fourthYearData[semester as 7 | 8] && fourthYearData[semester as 7 | 8].length > 0) {
+      return fourthYearData[semester as 7 | 8];
+    }
+    return FOURTH_YEAR_BRANCH_CURRICULUM.cse[semester as 7 | 8] || [];
   }
 
   // Semester 1 & 2 fallback

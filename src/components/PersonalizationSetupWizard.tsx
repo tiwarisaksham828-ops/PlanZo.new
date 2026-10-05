@@ -36,6 +36,7 @@ import {
   getBranchSemesterSubjects,
   getBranchSecondYearSubjects,
   getBranchThirdYearSubjects,
+  getBranchFourthYearSubjects,
 } from '../data/branchCurriculumData';
 import { SubjectCourse, SubjectAttendance, TimetableItem, ItemCategory } from '../types';
 import { playTaskCompleteSound } from '../utils/audioSynth';
@@ -210,10 +211,11 @@ export const PersonalizationSetupWizard: React.FC<PersonalizationSetupWizardProp
   // 1st or 2nd semester: Foundation engineering subjects
   // 3rd or 4th semester (Second Year): Branch-specific official subjects allotted to that branch
   // 5th or 6th semester (Third Year): Branch-specific official subjects allotted to that branch
-  // 7th semester and above: Final Year capstone & branch electives
+  // 7th or 8th semester (Fourth Year): Branch-specific official subjects allotted to that branch
   const isFoundationYear = semester === 1 || semester === 2;
   const isSecondYear = semester === 3 || semester === 4;
   const isThirdYear = semester === 5 || semester === 6;
+  const isFourthYear = semester === 7 || semester === 8;
 
   const currentAvailableSubjects = isFoundationYear
     ? FOUNDATION_ENGINEERING_SUBJECTS
@@ -221,12 +223,16 @@ export const PersonalizationSetupWizard: React.FC<PersonalizationSetupWizardProp
         ? getBranchSecondYearSubjects(resolvedBranch)
         : (isThirdYear
             ? getBranchThirdYearSubjects(resolvedBranch)
-            : getBranchSemesterSubjects(resolvedBranch, semester)));
+            : (isFourthYear
+                ? getBranchFourthYearSubjects(resolvedBranch)
+                : getBranchSemesterSubjects(resolvedBranch, semester))));
 
   const sem3Subs = isSecondYear ? getBranchSemesterSubjects(resolvedBranch, 3) : [];
   const sem4Subs = isSecondYear ? getBranchSemesterSubjects(resolvedBranch, 4) : [];
   const sem5Subs = isThirdYear ? getBranchSemesterSubjects(resolvedBranch, 5) : [];
   const sem6Subs = isThirdYear ? getBranchSemesterSubjects(resolvedBranch, 6) : [];
+  const sem7Subs = isFourthYear ? getBranchSemesterSubjects(resolvedBranch, 7) : [];
+  const sem8Subs = isFourthYear ? getBranchSemesterSubjects(resolvedBranch, 8) : [];
 
   // Step 2: Subject Options Selection
   const [selectedSubjectIds, setSelectedSubjectIds] = useState<string[]>(() => {
@@ -330,6 +336,18 @@ export const PersonalizationSetupWizard: React.FC<PersonalizationSetupWizardProp
     setSubjectSelectionError(null);
     const s6 = getBranchSemesterSubjects(resolvedBranch, 6);
     setSelectedSubjectIds(s6.map((s) => s.id));
+  };
+
+  const handleSelectSem7Subjects = () => {
+    setSubjectSelectionError(null);
+    const s7 = getBranchSemesterSubjects(resolvedBranch, 7);
+    setSelectedSubjectIds(s7.map((s) => s.id));
+  };
+
+  const handleSelectSem8Subjects = () => {
+    setSubjectSelectionError(null);
+    const s8 = getBranchSemesterSubjects(resolvedBranch, 8);
+    setSelectedSubjectIds(s8.map((s) => s.id));
   };
 
   const handleAddCustomSubject = () => {
@@ -1221,7 +1239,7 @@ export const PersonalizationSetupWizard: React.FC<PersonalizationSetupWizardProp
                     {selectedSubjectIds.length} Selected
                   </span>
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 border border-stone-200 dark:border-stone-700 font-medium">
-                    {isFoundationYear ? '1st Year Foundation' : isSecondYear ? '2nd Year Branch Subjects' : isThirdYear ? '3rd Year Branch Subjects' : 'Final Year'}
+                    {isFoundationYear ? '1st Year Foundation' : isSecondYear ? '2nd Year Branch Subjects' : isThirdYear ? '3rd Year Branch Subjects' : '4th Year Final Branch Subjects'}
                   </span>
                 </h3>
                 <p className="text-stone-500 dark:text-stone-400 text-xs mt-0.5">
@@ -1291,6 +1309,23 @@ export const PersonalizationSetupWizard: React.FC<PersonalizationSetupWizardProp
                       Semester 6 ({sem6Subs.length})
                     </button>
                   </>
+                ) : isFourthYear ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleSelectSem7Subjects}
+                      className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-stone-100 dark:bg-stone-800 hover:bg-teal-50 dark:hover:bg-teal-950/60 hover:text-teal-700 dark:hover:text-teal-300 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 transition-colors cursor-pointer"
+                    >
+                      Semester 7 ({sem7Subs.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSelectSem8Subjects}
+                      className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-stone-100 dark:bg-stone-800 hover:bg-teal-50 dark:hover:bg-teal-950/60 hover:text-teal-700 dark:hover:text-teal-300 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 transition-colors cursor-pointer"
+                    >
+                      Semester 8 ({sem8Subs.length})
+                    </button>
+                  </>
                 ) : null}
                 <button
                   type="button"
@@ -1310,7 +1345,7 @@ export const PersonalizationSetupWizard: React.FC<PersonalizationSetupWizardProp
               </div>
             )}
 
-            {/* Subject Options Grid: 1st Year Foundation, 2nd Year Branch-Specific, or 3rd Year Branch-Specific */}
+            {/* Subject Options Grid: 1st Year Foundation, 2nd Year, 3rd Year, or 4th Year Branch-Specific */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[340px] overflow-y-auto pr-1">
               {currentAvailableSubjects.map((sub) => {
                 const isSelected = selectedSubjectIds.includes(sub.id);
@@ -1318,6 +1353,8 @@ export const PersonalizationSetupWizard: React.FC<PersonalizationSetupWizardProp
                 const isSem4 = isSecondYear && sem4Subs.some((s) => s.id === sub.id);
                 const isSem5 = isThirdYear && sem5Subs.some((s) => s.id === sub.id);
                 const isSem6 = isThirdYear && sem6Subs.some((s) => s.id === sub.id);
+                const isSem7 = isFourthYear && sem7Subs.some((s) => s.id === sub.id);
+                const isSem8 = isFourthYear && sem8Subs.some((s) => s.id === sub.id);
                 return (
                   <div
                     key={sub.id}
@@ -1365,6 +1402,15 @@ export const PersonalizationSetupWizard: React.FC<PersonalizationSetupWizardProp
                                 : 'bg-teal-100 dark:bg-teal-950 text-teal-700 dark:text-teal-300'
                             }`}>
                               {isSem5 ? 'Sem 5' : isSem6 ? 'Sem 6' : '3rd Year'}
+                            </span>
+                          )}
+                          {isFourthYear && (
+                            <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold ${
+                              isSem7
+                                ? 'bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300'
+                                : 'bg-teal-100 dark:bg-teal-950 text-teal-700 dark:text-teal-300'
+                            }`}>
+                              {isSem7 ? 'Sem 7' : isSem8 ? 'Sem 8' : '4th Year'}
                             </span>
                           )}
                           {isFoundationYear && (
