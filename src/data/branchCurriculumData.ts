@@ -1,4 +1,7 @@
 import { SubjectCourse } from '../types';
+import { THIRD_YEAR_BRANCH_CURRICULUM } from './thirdYearCurriculumData';
+
+export { THIRD_YEAR_BRANCH_CURRICULUM };
 
 export type BranchKey =
   | 'cse'
@@ -52,7 +55,7 @@ export function normalizeBranchKey(branchStr: string): BranchKey {
   return 'cse';
 }
 
-function makeModules(subName: string, code: string) {
+export function makeModules(subName: string, code: string) {
   return [
     {
       id: `${code}-u1`,
@@ -1540,113 +1543,44 @@ export function getBranchSecondYearSubjects(branchName: string): SubjectCourse[]
 }
 
 /**
+ * Returns all third year subjects (Semester 5 and Semester 6 combined)
+ * allotted to the specified branch (~12 official branch subjects).
+ */
+export function getBranchThirdYearSubjects(branchName: string): SubjectCourse[] {
+  const branchKey = normalizeBranchKey(branchName);
+  const branchData = THIRD_YEAR_BRANCH_CURRICULUM[branchKey] || THIRD_YEAR_BRANCH_CURRICULUM.cse;
+  const sem5 = branchData[5] || [];
+  const sem6 = branchData[6] || [];
+  return [...sem5, ...sem6];
+}
+
+/**
  * Returns the official list of subjects for a given branch and semester.
  * If semester is 1 or 2, foundation subjects are used.
- * If semester is 3 or 4, the exact branch curriculum provided by the user is used.
- * If semester >= 5, a high-yield curriculum is provided for that branch or CSE fallback.
+ * If semester is 3 or 4, the exact 2nd year branch curriculum is used.
+ * If semester is 5 or 6, the exact 3rd year branch curriculum is used.
+ * If semester >= 7, capstone/final year curriculum is provided.
  */
 export function getBranchSemesterSubjects(branchName: string, semester: number): SubjectCourse[] {
   const branchKey = normalizeBranchKey(branchName);
-  const branchData = BRANCH_SEMESTER_CURRICULUM[branchKey] || BRANCH_SEMESTER_CURRICULUM.cse;
 
   if (semester === 3 || semester === 4) {
+    const branchData = BRANCH_SEMESTER_CURRICULUM[branchKey] || BRANCH_SEMESTER_CURRICULUM.cse;
     if (branchData[semester] && branchData[semester].length > 0) {
       return branchData[semester];
     }
     return BRANCH_SEMESTER_CURRICULUM.cse[semester];
   }
 
-  if (semester >= 5) {
-    // Upper semester engineering curriculum
-    if (semester === 5) {
-      return [
-        {
-          id: `${branchKey}-501-theory`,
-          code: `${branchKey.toUpperCase()}-501`,
-          name: `${branchName.split('(')[0].trim()} Core Theory - I`,
-          credits: 4,
-          color: 'indigo',
-          standardTextbook: 'Institute Prescribed Core Text',
-          pyqPaperAvailable: true,
-          modules: makeModules('Core Theory - I', `${branchKey.toUpperCase()}-501`),
-        },
-        {
-          id: `${branchKey}-502-theory`,
-          code: `${branchKey.toUpperCase()}-502`,
-          name: 'Database & Cloud Architectures',
-          credits: 4,
-          color: 'teal',
-          standardTextbook: 'Cloud Computing: Principles and Paradigms by Rajkumar Buyya',
-          pyqPaperAvailable: true,
-          modules: makeModules('Database & Cloud Architectures', `${branchKey.toUpperCase()}-502`),
-        },
-        {
-          id: `${branchKey}-503-elective`,
-          code: `${branchKey.toUpperCase()}-503`,
-          name: 'Departmental Elective - I',
-          credits: 3,
-          color: 'purple',
-          standardTextbook: 'Core Technical Reference',
-          pyqPaperAvailable: true,
-          modules: makeModules('Departmental Elective - I', `${branchKey.toUpperCase()}-503`),
-        },
-        {
-          id: `${branchKey}-504-lab`,
-          code: `${branchKey.toUpperCase()}-504`,
-          name: 'Core Domain Lab & Minor Project',
-          credits: 2,
-          color: 'amber',
-          standardTextbook: 'Laboratory Manual',
-          pyqPaperAvailable: true,
-          modules: makeModules('Core Domain Lab & Minor Project', `${branchKey.toUpperCase()}-504`),
-        },
-      ];
+  if (semester === 5 || semester === 6) {
+    const thirdYearData = THIRD_YEAR_BRANCH_CURRICULUM[branchKey] || THIRD_YEAR_BRANCH_CURRICULUM.cse;
+    if (thirdYearData[semester as 5 | 6] && thirdYearData[semester as 5 | 6].length > 0) {
+      return thirdYearData[semester as 5 | 6];
     }
+    return THIRD_YEAR_BRANCH_CURRICULUM.cse[semester as 5 | 6] || [];
+  }
 
-    if (semester === 6) {
-      return [
-        {
-          id: `${branchKey}-601-ml`,
-          code: `${branchKey.toUpperCase()}-601`,
-          name: 'Machine Learning & Applied Analytics',
-          credits: 4,
-          color: 'emerald',
-          standardTextbook: 'Pattern Recognition and Machine Learning by Christopher Bishop',
-          pyqPaperAvailable: true,
-          modules: makeModules('Machine Learning & Applied Analytics', `${branchKey.toUpperCase()}-601`),
-        },
-        {
-          id: `${branchKey}-602-sys`,
-          code: `${branchKey.toUpperCase()}-602`,
-          name: 'Compiler Design & System Programming',
-          credits: 4,
-          color: 'indigo',
-          standardTextbook: 'Compilers: Principles, Techniques, and Tools (Dragon Book)',
-          pyqPaperAvailable: true,
-          modules: makeModules('Compiler Design & System Programming', `${branchKey.toUpperCase()}-602`),
-        },
-        {
-          id: `${branchKey}-603-elective`,
-          code: `${branchKey.toUpperCase()}-603`,
-          name: 'Open Elective - Engineering Economics',
-          credits: 3,
-          color: 'amber',
-          standardTextbook: 'Engineering Economics by R. Panneerselvam',
-          pyqPaperAvailable: true,
-          modules: makeModules('Open Elective - Engineering Economics', `${branchKey.toUpperCase()}-603`),
-        },
-        {
-          id: `${branchKey}-604-proj`,
-          code: `${branchKey.toUpperCase()}-604`,
-          name: 'Minor Project - Phase I',
-          credits: 3,
-          color: 'rose',
-          standardTextbook: 'Project Design & Implementation Guide',
-          pyqPaperAvailable: true,
-          modules: makeModules('Minor Project - Phase I', `${branchKey.toUpperCase()}-604`),
-        },
-      ];
-    }
+  if (semester >= 7) {
 
     // 7th & 8th Sem
     return [

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import {
   BookOpen,
@@ -54,6 +54,15 @@ export const AcademicHub: React.FC = () => {
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>(() => {
     return activeSemesterSubjects[0]?.id || subjects[0]?.id || 'cs101';
   });
+
+  useEffect(() => {
+    if (activeSemesterSubjects.length > 0) {
+      const exists = activeSemesterSubjects.some((s) => s.id === selectedSubjectId);
+      if (!exists) {
+        setSelectedSubjectId(activeSemesterSubjects[0].id);
+      }
+    }
+  }, [currentSemester, activeSemesterSubjects, selectedSubjectId]);
 
   const [activeTab, setActiveTab] = useState<
     'notes' | 'pyq' | 'videos' | 'assignments' | 'viva' | 'syllabus' | 'topics' | 'planner'
