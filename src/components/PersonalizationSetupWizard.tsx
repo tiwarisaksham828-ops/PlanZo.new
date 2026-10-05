@@ -32,7 +32,10 @@ import {
   getCurriculumForSatiSemester,
 } from '../data/satiVidishaData';
 import { FOUNDATION_ENGINEERING_SUBJECTS } from '../data/foundationSubjects';
-import { getBranchSemesterSubjects } from '../data/branchCurriculumData';
+import {
+  getBranchSemesterSubjects,
+  getBranchSecondYearSubjects,
+} from '../data/branchCurriculumData';
 import { SubjectCourse, SubjectAttendance, TimetableItem, ItemCategory } from '../types';
 import { playTaskCompleteSound } from '../utils/audioSynth';
 import { fireConfetti } from '../utils/audioVibes';
@@ -174,51 +177,54 @@ export const PersonalizationSetupWizard: React.FC<PersonalizationSetupWizardProp
   ];
 
   const ENGINEERING_BRANCH_OPTIONS = [
+    'Blockchain Technology (BCT)',
     'Computer Science & Engineering (CSE)',
+    'Cyber Security',
+    'Internet of Things (IoT)',
     'Information Technology (IT)',
     'Artificial Intelligence & Machine Learning (AIML)',
     'Artificial Intelligence & Data Science (AI & DS)',
-    'Internet of Things (IoT)',
-    'Cyber Security',
-    'Block Chain / Blockchain Technology',
-    'Electronics & Communication Engineering (ECE)',
-    'Electrical Engineering (EE)',
     'Mechanical Engineering (ME)',
     'Civil Engineering (CE)',
+    'Electrical Engineering (EE)',
+    'Electronics & Communication Engineering (EC / ECE)',
     'Electronics & Instrumentation Engineering (EI)',
-    'Robotics & Automation',
-    'Chemical Engineering',
-    'Biotechnology Engineering',
-    'Other Engineering Branch (Custom)',
   ];
 
   // Step 1: Academic Identity
   const [name, setName] = useState(currentUser?.name || profile.name || '');
   const [college, setCollege] = useState(profile.customCollege || profile.college || 'Samrat Ashok Technological Institute (SATI), Vidisha M.P.');
   const [customCollege, setCustomCollege] = useState(profile.customCollege || '');
-  const [branch, setBranch] = useState(profile.branch || 'Computer Science & Engineering (CSE)');
-  const [customBranch, setCustomBranch] = useState(
-    ENGINEERING_BRANCH_OPTIONS.includes(profile.branch || '') ? '' : (profile.branch || '')
+  const [branch, setBranch] = useState(
+    ENGINEERING_BRANCH_OPTIONS.includes(profile.branch || '')
+      ? (profile.branch || 'Computer Science & Engineering (CSE)')
+      : 'Computer Science & Engineering (CSE)'
   );
   const [semester, setSemester] = useState<number>(profile.semester || 1);
   const [rollNo, setRollNo] = useState(profile.rollNo || '0108CS211045');
 
   // Branch resolution & curriculum determination
-  const resolvedBranch = (branch === 'Other Engineering Branch (Custom)' || branch === 'OTHERS')
-    ? (customBranch.trim() || 'Engineering')
-    : (customBranch.trim() || branch || 'Computer Science & Engineering (CSE)');
+  const resolvedBranch = branch;
 
   // 1st or 2nd semester: Foundation engineering subjects
-  // 3rd or 4th semester (or higher): Branch-specific official subjects
+  // 3rd or 4th semester (Second Year): Branch-specific official subjects allotted to that branch
+  // 5th semester and above: Upper semester branch-specific subjects
   const isFoundationYear = semester === 1 || semester === 2;
+  const isSecondYear = semester === 3 || semester === 4;
 
   const currentAvailableSubjects = isFoundationYear
     ? FOUNDATION_ENGINEERING_SUBJECTS
-    : getBranchSemesterSubjects(resolvedBranch, semester);
+    : (isSecondYear
+        ? getBranchSecondYearSubjects(resolvedBranch)
+        : getBranchSemesterSubjects(resolvedBranch, semester));
+
+  const sem3Subs = isSecondYear ? getBranchSemesterSubjects(resolvedBranch, 3) : [];
+  const sem4Subs = isSecondYear ? getBranchSemesterSubjects(resolvedBranch, 4) : [];
 
   // Step 2: Subject Options Selection
   const [selectedSubjectIds, setSelectedSubjectIds] = useState<string[]>(() => {
-    const isFound = (profile.semester || 1) <= 2;
+    const sem = profile.semester || 1;
+    const isFound = sem <= 2;
     if (isFound) {
       return [
         'sub-applied-chem',
@@ -230,7 +236,7 @@ export const PersonalizationSetupWizard: React.FC<PersonalizationSetupWizardProp
     }
     const branchSubs = getBranchSemesterSubjects(
       profile.branch || 'Computer Science & Engineering (CSE)',
-      profile.semester || 3
+      sem
     );
     return branchSubs.map((s) => s.id);
   });
@@ -240,13 +246,14 @@ export const PersonalizationSetupWizard: React.FC<PersonalizationSetupWizardProp
   const [newSubjectCode, setNewSubjectCode] = useState('');
   const [subjectSelectionError, setSubjectSelectionError] = useState<string | null>(null);
   const [mostImportantTask, setMostImportantTask] = useState<string>(() => {
-    const isFound = (profile.semester || 1) <= 2;
+    const sem = profile.semester || 1;
+    const isFound = sem <= 2;
     if (isFound) {
       return profile.mostImportantTask || 'Basic Computer Science & C Programming';
     }
     const branchSubs = getBranchSemesterSubjects(
       profile.branch || 'Computer Science & Engineering (CSE)',
-      profile.semester || 3
+      sem
     );
     return profile.mostImportantTask || branchSubs[0]?.name || 'Discrete Mathematics';
   });
@@ -292,6 +299,18 @@ export const PersonalizationSetupWizard: React.FC<PersonalizationSetupWizardProp
       'sub-fund-mech',
       'sub-fund-civil',
     ]);
+  };
+
+  const handleSelectSem3Subjects = () => {
+    setSubjectSelectionError(null);
+    const s3 = getBranchSemesterSubjects(resolvedBranch, 3);
+    setSelectedSubjectIds(s3.map((s) => s.id));
+  };
+
+  const handleSelectSem4Subjects = () => {
+    setSubjectSelectionError(null);
+    const s4 = getBranchSemesterSubjects(resolvedBranch, 4);
+    setSelectedSubjectIds(s4.map((s) => s.id));
   };
 
   const handleAddCustomSubject = () => {
@@ -353,6 +372,12 @@ export const PersonalizationSetupWizard: React.FC<PersonalizationSetupWizardProp
         'sub-basic-cs',
       ]);
       setMostImportantTask('Basic Computer Science & C Programming');
+    } else if (newSem === 3 || newSem === 4) {
+      const semSubs = getBranchSemesterSubjects(resolvedBranch, newSem);
+      setSelectedSubjectIds(semSubs.map((s) => s.id));
+      if (semSubs.length > 0) {
+        setMostImportantTask(semSubs[0].name);
+      }
     } else {
       const branchSubs = getBranchSemesterSubjects(resolvedBranch, newSem);
       setSelectedSubjectIds(branchSubs.map((s) => s.id));
@@ -366,10 +391,7 @@ export const PersonalizationSetupWizard: React.FC<PersonalizationSetupWizardProp
     setBranch(newBranch);
     setSubjectSelectionError(null);
     if (semester !== 1 && semester !== 2) {
-      const effBranch = (newBranch === 'Other Engineering Branch (Custom)' || newBranch === 'OTHERS')
-        ? (customBranch.trim() || 'Engineering')
-        : (customBranch.trim() || newBranch || 'Computer Science & Engineering (CSE)');
-      const branchSubs = getBranchSemesterSubjects(effBranch, semester);
+      const branchSubs = getBranchSemesterSubjects(newBranch, semester);
       setSelectedSubjectIds(branchSubs.map((s) => s.id));
       if (branchSubs.length > 0) {
         setMostImportantTask(branchSubs[0].name);
@@ -963,9 +985,7 @@ export const PersonalizationSetupWizard: React.FC<PersonalizationSetupWizardProp
     localStorage.setItem('planzo_tasks_v3', JSON.stringify(initialTasks));
 
     const resolvedCollege = college === 'OTHERS' ? (customCollege.trim() || 'Engineering Institute') : college;
-    const resolvedBranch = (branch === 'Other Engineering Branch (Custom)' || branch === 'OTHERS')
-      ? (customBranch.trim() || 'Engineering')
-      : (customBranch.trim() || branch || 'Computer Science & Engineering (CSE)');
+    const resolvedBranch = branch;
 
     updateProfile({
       name: name.trim() || currentUser?.name || profile.name || 'Student',
@@ -985,8 +1005,10 @@ export const PersonalizationSetupWizard: React.FC<PersonalizationSetupWizardProp
       accountCreatedAt: todayStr,
     });
 
-    // Directly update timetable state in AppContext
+    // Directly update timetable, subjects, and attendance states in AppContext
     setTimetable(finalSchedule);
+    setSubjects(compiledSubjects);
+    setAttendance(newAttendanceList);
 
     // CRITICAL: Come to Home page after this all!
     setActiveView('home');
@@ -1150,13 +1172,9 @@ export const PersonalizationSetupWizard: React.FC<PersonalizationSetupWizardProp
                 <span className="text-[10px] font-mono text-stone-400">Select Specialization</span>
               </label>
               <select
-                value={ENGINEERING_BRANCH_OPTIONS.includes(branch) ? branch : 'Other Engineering Branch (Custom)'}
+                value={branch}
                 onChange={(e) => {
-                  const val = e.target.value;
-                  setBranch(val);
-                  if (val !== 'Other Engineering Branch (Custom)') {
-                    setCustomBranch('');
-                  }
+                  handleBranchChange(e.target.value);
                 }}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/70 dark:bg-stone-900/60 text-stone-900 dark:text-stone-100 font-semibold focus:outline-hidden focus:ring-2 focus:ring-teal-500/50 cursor-pointer"
               >
@@ -1166,18 +1184,6 @@ export const PersonalizationSetupWizard: React.FC<PersonalizationSetupWizardProp
                   </option>
                 ))}
               </select>
-
-              {(branch === 'Other Engineering Branch (Custom)' || (!ENGINEERING_BRANCH_OPTIONS.slice(0, -1).includes(branch) && branch)) && (
-                <input
-                  type="text"
-                  value={customBranch}
-                  onChange={(e) => {
-                    setCustomBranch(e.target.value);
-                  }}
-                  placeholder="Enter your Engineering Branch (e.g. Aeronautical Engineering)..."
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/70 dark:bg-stone-900/60 text-stone-900 dark:text-stone-100 placeholder-stone-400 focus:outline-hidden focus:ring-2 focus:ring-teal-500/50 mt-1 font-medium"
-                />
-              )}
             </div>
           </div>
         )}
@@ -1208,24 +1214,45 @@ export const PersonalizationSetupWizard: React.FC<PersonalizationSetupWizardProp
                   onClick={handleSelectAllSubjects}
                   className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-stone-100 dark:bg-stone-800 hover:bg-teal-50 dark:hover:bg-teal-950/60 hover:text-teal-700 dark:hover:text-teal-300 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 transition-colors cursor-pointer"
                 >
-                  Select All (10)
+                  Select All ({currentAvailableSubjects.length + customSubjects.length})
                 </button>
-                <button
-                  type="button"
-                  onClick={handleSelectStandardGroupA}
-                  className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-stone-100 dark:bg-stone-800 hover:bg-teal-50 dark:hover:bg-teal-950/60 hover:text-teal-700 dark:hover:text-teal-300 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 transition-colors cursor-pointer"
-                  title="Physics, Maths, Electrical, CS, English"
-                >
-                  Group A (5)
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSelectStandardGroupB}
-                  className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-stone-100 dark:bg-stone-800 hover:bg-teal-50 dark:hover:bg-teal-950/60 hover:text-teal-700 dark:hover:text-teal-300 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 transition-colors cursor-pointer"
-                  title="Chemistry, Maths, Electronics, Drawing, Mech, Civil"
-                >
-                  Group B (6)
-                </button>
+                {isFoundationYear ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleSelectStandardGroupA}
+                      className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-stone-100 dark:bg-stone-800 hover:bg-teal-50 dark:hover:bg-teal-950/60 hover:text-teal-700 dark:hover:text-teal-300 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 transition-colors cursor-pointer"
+                      title="Physics, Maths, Electrical, CS, English"
+                    >
+                      Group A (5)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSelectStandardGroupB}
+                      className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-stone-100 dark:bg-stone-800 hover:bg-teal-50 dark:hover:bg-teal-950/60 hover:text-teal-700 dark:hover:text-teal-300 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 transition-colors cursor-pointer"
+                      title="Chemistry, Maths, Electronics, Drawing, Mech, Civil"
+                    >
+                      Group B (6)
+                    </button>
+                  </>
+                ) : isSecondYear ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleSelectSem3Subjects}
+                      className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-stone-100 dark:bg-stone-800 hover:bg-teal-50 dark:hover:bg-teal-950/60 hover:text-teal-700 dark:hover:text-teal-300 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 transition-colors cursor-pointer"
+                    >
+                      Semester 3 ({sem3Subs.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSelectSem4Subjects}
+                      className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-stone-100 dark:bg-stone-800 hover:bg-teal-50 dark:hover:bg-teal-950/60 hover:text-teal-700 dark:hover:text-teal-300 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 transition-colors cursor-pointer"
+                    >
+                      Semester 4 ({sem4Subs.length})
+                    </button>
+                  </>
+                ) : null}
                 <button
                   type="button"
                   onClick={handleDeselectAllSubjects}
@@ -1244,10 +1271,12 @@ export const PersonalizationSetupWizard: React.FC<PersonalizationSetupWizardProp
               </div>
             )}
 
-            {/* 10 Engineering Subject Options Grid */}
+            {/* Subject Options Grid: 1st Year Foundation OR 2nd Year Branch-Specific */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[340px] overflow-y-auto pr-1">
-              {FOUNDATION_ENGINEERING_SUBJECTS.map((sub) => {
+              {currentAvailableSubjects.map((sub) => {
                 const isSelected = selectedSubjectIds.includes(sub.id);
+                const isSem3 = isSecondYear && sem3Subs.some((s) => s.id === sub.id);
+                const isSem4 = isSecondYear && sem4Subs.some((s) => s.id === sub.id);
                 return (
                   <div
                     key={sub.id}
@@ -1271,13 +1300,29 @@ export const PersonalizationSetupWizard: React.FC<PersonalizationSetupWizardProp
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-1">
-                        <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold ${
-                          isSelected
-                            ? 'bg-teal-100 dark:bg-teal-900/80 text-teal-800 dark:text-teal-200'
-                            : 'bg-stone-100 dark:bg-stone-800 text-stone-500'
-                        }`}>
-                          {sub.code}
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold ${
+                            isSelected
+                              ? 'bg-teal-100 dark:bg-teal-900/80 text-teal-800 dark:text-teal-200'
+                              : 'bg-stone-100 dark:bg-stone-800 text-stone-500'
+                          }`}>
+                            {sub.code}
+                          </span>
+                          {isSecondYear && (
+                            <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold ${
+                              isSem3
+                                ? 'bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300'
+                                : 'bg-teal-100 dark:bg-teal-950 text-teal-700 dark:text-teal-300'
+                            }`}>
+                              {isSem3 ? 'Sem 3' : isSem4 ? 'Sem 4' : '2nd Year'}
+                            </span>
+                          )}
+                          {isFoundationYear && (
+                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded font-medium bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300">
+                              1st Year
+                            </span>
+                          )}
+                        </div>
                         <span className="text-[10px] font-mono text-stone-400 font-medium">
                           {sub.credits} Credits
                         </span>
@@ -1290,7 +1335,7 @@ export const PersonalizationSetupWizard: React.FC<PersonalizationSetupWizardProp
                       </div>
 
                       <div className="text-[10px] text-stone-500 dark:text-stone-400 mt-0.5 truncate">
-                        5 Units · Theory & Practice
+                        {sub.standardTextbook ? sub.standardTextbook.split('by')[0].trim() : '5 Units · Theory & Practice'}
                       </div>
                     </div>
                   </div>

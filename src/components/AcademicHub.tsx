@@ -26,7 +26,8 @@ import {
 import { FolderItem } from '../types';
 import { playTaskCompleteSound } from '../utils/audioSynth';
 import { fireConfetti } from '../utils/audioVibes';
-import { getCurriculumForSatiSemester } from '../data/satiVidishaData';
+import { getBranchSemesterSubjects } from '../data/branchCurriculumData';
+import { FOUNDATION_ENGINEERING_SUBJECTS } from '../data/foundationSubjects';
 import { ALL_8_SEMESTERS } from '../data/btechData';
 
 export const AcademicHub: React.FC = () => {
@@ -39,12 +40,20 @@ export const AcademicHub: React.FC = () => {
     awardXp,
   } = useApp();
 
-  const [currentSemester, setCurrentSemester] = useState<number>(profile.semester || 4);
-  const activeSemesterSubjects = getCurriculumForSatiSemester(currentSemester);
+  const [currentSemester, setCurrentSemester] = useState<number>(profile.semester || 1);
 
-  const [selectedSubjectId, setSelectedSubjectId] = useState<string>(
-    activeSemesterSubjects[0]?.id || subjects[0]?.id || 'cs101'
-  );
+  // If current semester matches profile semester and user has chosen subjects, display them!
+  // Otherwise display the official branch curriculum for that semester.
+  const activeSemesterSubjects =
+    currentSemester === (profile.semester || 1) && subjects && subjects.length > 0
+      ? subjects
+      : (currentSemester <= 2
+          ? FOUNDATION_ENGINEERING_SUBJECTS
+          : getBranchSemesterSubjects(profile.branch || 'Computer Science & Engineering (CSE)', currentSemester));
+
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string>(() => {
+    return activeSemesterSubjects[0]?.id || subjects[0]?.id || 'cs101';
+  });
 
   const [activeTab, setActiveTab] = useState<
     'notes' | 'pyq' | 'videos' | 'assignments' | 'viva' | 'syllabus' | 'topics' | 'planner'
@@ -161,7 +170,12 @@ export const AcademicHub: React.FC = () => {
             onChange={(e) => {
               const sem = Number(e.target.value);
               setCurrentSemester(sem);
-              const subs = getCurriculumForSatiSemester(sem);
+              const subs =
+                sem === (profile.semester || 1) && subjects && subjects.length > 0
+                  ? subjects
+                  : (sem <= 2
+                      ? FOUNDATION_ENGINEERING_SUBJECTS
+                      : getBranchSemesterSubjects(profile.branch || 'Computer Science & Engineering (CSE)', sem));
               if (subs.length > 0) setSelectedSubjectId(subs[0].id);
             }}
             className="px-3 py-1.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-850 text-xs font-bold text-stone-900 dark:text-stone-100 cursor-pointer focus:ring-2 focus:ring-teal-500"

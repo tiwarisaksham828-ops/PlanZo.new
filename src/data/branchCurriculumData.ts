@@ -26,7 +26,7 @@ export const BRANCH_LIST: BranchDetails[] = [
   { key: 'aiml', label: 'Artificial Intelligence & Machine Learning (AIML)', shortName: 'AIML' },
   { key: 'aids', label: 'Artificial Intelligence & Data Science (AI & DS)', shortName: 'AI & DS' },
   { key: 'iot', label: 'Internet of Things (IoT)', shortName: 'IoT' },
-  { key: 'blockchain', label: 'Block Chain / Blockchain Technology', shortName: 'Blockchain' },
+  { key: 'blockchain', label: 'Blockchain Technology (BCT)', shortName: 'BCT' },
   { key: 'ece', label: 'Electronics & Communication Engineering (ECE / EC)', shortName: 'ECE' },
   { key: 'me', label: 'Mechanical Engineering (ME)', shortName: 'ME' },
   { key: 'ce', label: 'Civil Engineering (CE)', shortName: 'CE' },
@@ -42,7 +42,7 @@ export function normalizeBranchKey(branchStr: string): BranchKey {
   if (lower.includes('aiml') || lower.includes('machine learning')) return 'aiml';
   if (lower.includes('data science') || lower.includes('ai & ds') || lower.includes('aids')) return 'aids';
   if (lower.includes('iot') || lower.includes('internet of things')) return 'iot';
-  if (lower.includes('block chain') || lower.includes('blockchain')) return 'blockchain';
+  if (lower.includes('block chain') || lower.includes('blockchain') || lower.includes('bct')) return 'blockchain';
   if (lower.includes('instrumentation') || lower.includes('ei') || lower.includes('e&i')) return 'ei';
   if (lower.includes('civil') || lower.includes('ce)') || lower === 'ce') return 'ce';
   if (lower.includes('mechanical') || lower.includes('me)') || lower === 'me') return 'me';
@@ -1002,66 +1002,76 @@ export const BRANCH_SEMESTER_CURRICULUM: Record<BranchKey, Record<number, Subjec
         modules: makeModules('Signals and Systems', 'EC-303'),
       },
       {
-        id: 'ec-304-nmcv',
+        id: 'ec-304-de',
         code: 'EC-304',
-        name: 'Numerical Methods & Complex Variables',
+        name: 'Digital Electronics',
         credits: 4,
         color: 'purple',
-        standardTextbook: 'Advanced Engineering Mathematics by Erwin Kreyszig',
+        standardTextbook: 'Digital Design by M. Morris Mano',
         pyqPaperAvailable: true,
-        modules: makeModules('Numerical Methods & Complex Variables', 'EC-304'),
+        modules: makeModules('Digital Electronics', 'EC-304'),
+      },
+      {
+        id: 'ec-305-maths-3',
+        code: 'BT-301',
+        name: 'Mathematics-III (Advanced Engineering Mathematics)',
+        credits: 4,
+        color: 'amber',
+        standardTextbook: 'Higher Engineering Mathematics by B.S. Grewal',
+        pyqPaperAvailable: true,
+        modules: makeModules('Mathematics-III (Advanced Engineering Mathematics)', 'BT-301'),
       },
     ],
     4: [
       {
         id: 'ec-401-analog-circuits',
         code: 'EC-401',
-        name: 'Analog Circuits & Systems',
+        name: 'Analog Circuits',
         credits: 4,
         color: 'emerald',
         standardTextbook: 'Microelectronic Circuits by Sedra & Smith',
         pyqPaperAvailable: true,
-        modules: makeModules('Analog Circuits & Systems', 'EC-401'),
+        modules: makeModules('Analog Circuits', 'EC-401'),
       },
       {
-        id: 'ec-402-digital-elec',
+        id: 'ec-402-antenna',
         code: 'EC-402',
-        name: 'Digital Electronics & Logic Design',
+        name: 'Antenna & Wave Propagation',
         credits: 4,
         color: 'sky',
-        standardTextbook: 'Digital Design by M. Morris Mano',
+        standardTextbook: 'Antennas and Wave Propagation by K.D. Prasad / J.D. Kraus',
         pyqPaperAvailable: true,
-        modules: makeModules('Digital Electronics & Logic Design', 'EC-402'),
+        modules: makeModules('Antenna & Wave Propagation', 'EC-402'),
       },
       {
-        id: 'ec-403-em-waves',
+        id: 'ec-403-dc',
         code: 'EC-403',
-        name: 'Electromagnetic Fields & Waves',
+        name: 'Digital Communication',
         credits: 4,
         color: 'indigo',
-        standardTextbook: 'Engineering Electromagnetics by William H. Hayt',
+        standardTextbook: 'Digital Communications by John G. Proakis',
         pyqPaperAvailable: true,
-        modules: makeModules('Electromagnetic Fields & Waves', 'EC-403'),
+        modules: makeModules('Digital Communication', 'EC-403'),
       },
       {
-        id: 'ec-404-comm-systems',
+        id: 'ec-404-control-sys',
         code: 'EC-404',
-        name: 'Communication Systems',
+        name: 'Control Systems',
         credits: 4,
-        color: 'amber',
-        standardTextbook: 'Modern Digital and Analog Communication Systems by B.P. Lathi',
-        pyqPaperAvailable: true,
-        modules: makeModules('Communication Systems', 'EC-404'),
-      },
-      {
-        id: 'ec-405-control-sys',
-        code: 'EC-405',
-        name: 'Control Systems Engineering',
-        credits: 3,
         color: 'rose',
         standardTextbook: 'Control Systems Engineering by I.J. Nagrath & M. Gopal',
         pyqPaperAvailable: true,
-        modules: makeModules('Control Systems Engineering', 'EC-405'),
+        modules: makeModules('Control Systems', 'EC-404'),
+      },
+      {
+        id: 'ec-405-nmcv',
+        code: 'EC-405',
+        name: 'Numerical Methods & Complex Variables',
+        credits: 4,
+        color: 'amber',
+        standardTextbook: 'Advanced Engineering Mathematics by Erwin Kreyszig',
+        pyqPaperAvailable: true,
+        modules: makeModules('Numerical Methods & Complex Variables', 'EC-405'),
       },
     ],
   },
@@ -1516,6 +1526,18 @@ export const BRANCH_SEMESTER_CURRICULUM: Record<BranchKey, Record<number, Subjec
     ],
   },
 };
+
+/**
+ * Returns all second year subjects (Semester 3 and Semester 4 combined)
+ * allotted to the specified branch (~10 official branch subjects).
+ */
+export function getBranchSecondYearSubjects(branchName: string): SubjectCourse[] {
+  const branchKey = normalizeBranchKey(branchName);
+  const branchData = BRANCH_SEMESTER_CURRICULUM[branchKey] || BRANCH_SEMESTER_CURRICULUM.cse;
+  const sem3 = branchData[3] || [];
+  const sem4 = branchData[4] || [];
+  return [...sem3, ...sem4];
+}
 
 /**
  * Returns the official list of subjects for a given branch and semester.

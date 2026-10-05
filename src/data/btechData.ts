@@ -12,20 +12,18 @@ export const COLLEGES_LIST = [
 ];
 
 export const BRANCHES_LIST = [
-  'B.Tech. Computer Science & Engineering',
-  'B.Tech. Information Technology',
-  'B.Tech. AI & Robotics',
-  'B.Tech. Cyber Security',
-  'B.Tech. Block Chain Technology',
-  'B.Tech. Electronics & Telecommunication Engineering',
-  'B.Tech. Electrical Engineering',
-  'B.Tech. Mechanical Engineering',
-  'B.Tech. Civil Engineering',
-  'B.Tech. Electronics & Instrumentation Engineering',
-  'B.Tech. Biomedical Engineering',
-  'B.Tech Industrial & Production Engineering',
-  'B. Pharma',
-  'B.Des. Bachelor of Design',
+  'Blockchain Technology (BCT)',
+  'Computer Science & Engineering (CSE)',
+  'Cyber Security',
+  'Internet of Things (IoT)',
+  'Information Technology (IT)',
+  'Artificial Intelligence & Machine Learning (AIML)',
+  'Artificial Intelligence & Data Science (AI & DS)',
+  'Mechanical Engineering (ME)',
+  'Civil Engineering (CE)',
+  'Electrical Engineering (EE)',
+  'Electronics & Communication Engineering (EC / ECE)',
+  'Electronics & Instrumentation Engineering (EI)',
 ];
 
 export const DEFAULT_HABITS = [

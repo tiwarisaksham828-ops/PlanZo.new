@@ -320,7 +320,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (saved) {
       try { return JSON.parse(saved); } catch (e) {}
     }
-    return getCurriculumForSatiSemester(1);
+    return FOUNDATION_ENGINEERING_SUBJECTS;
   });
 
   // 4. Daily Reflections State (Starts clean for new user)
