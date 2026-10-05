@@ -23,12 +23,14 @@ import {
   BookMarked,
   Award,
 } from 'lucide-react';
-import { FolderItem } from '../types';
+import { FolderItem, SubjectCourse } from '../types';
 import { playTaskCompleteSound } from '../utils/audioSynth';
 import { fireConfetti } from '../utils/audioVibes';
 import { getBranchSemesterSubjects } from '../data/branchCurriculumData';
 import { FOUNDATION_ENGINEERING_SUBJECTS } from '../data/foundationSubjects';
 import { ALL_8_SEMESTERS } from '../data/btechData';
+import { SubjectNotesModal } from './SubjectNotesModal';
+import { OFFICIAL_FIRST_YEAR_DRIVE_LINK } from '../data/firstYearDetailedNotes';
 
 export const AcademicHub: React.FC = () => {
   const {
@@ -71,6 +73,10 @@ export const AcademicHub: React.FC = () => {
   const [isAddingNote, setIsAddingNote] = useState(false);
   const [selectedViva, setSelectedViva] = useState<any | null>(null);
   const [selectedNotePreview, setSelectedNotePreview] = useState<FolderItem | null>(null);
+
+  // Dedicated "Notes of Subject" Modal State
+  const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
+  const [modalSubject, setModalSubject] = useState<SubjectCourse | null>(null);
 
   // New Note Form State
   const [newNoteTitle, setNewNoteTitle] = useState('');
@@ -199,29 +205,60 @@ export const AcademicHub: React.FC = () => {
       </div>
 
       {/* 2. Subject Selector: Compact, Clean Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
-        {activeSemesterSubjects.map((sub) => {
-          const isSelected = sub.id === activeSubject?.id;
-          return (
-            <button
-              key={sub.id}
-              onClick={() => setSelectedSubjectId(sub.id)}
-              className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                isSelected
-                  ? 'border-teal-600 bg-teal-50/70 dark:bg-teal-950/40 text-stone-900 dark:text-stone-100 ring-2 ring-teal-500/40 shadow-xs'
-                  : 'border-stone-200/80 dark:border-stone-800 bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-300 hover:border-teal-400/60'
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-xs font-bold">{sub.code}</span>
-                <span className="text-[10px] font-mono text-stone-400">{sub.credits}C</span>
-              </div>
-              <div className="text-xs font-semibold truncate mt-1" title={sub.name}>
-                {sub.name}
-              </div>
-            </button>
-          );
-        })}
+      <div>
+        <div className="flex items-center justify-between pb-1.5">
+          <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">
+            Semester Subjects (Click any box to open Notes)
+          </span>
+          <a
+            href={OFFICIAL_FIRST_YEAR_DRIVE_LINK}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs font-bold text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-1"
+          >
+            <span>Google Drive Notes Folder</span>
+            <ExternalLink className="w-3 h-3" />
+          </a>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+          {activeSemesterSubjects.map((sub) => {
+            const isSelected = sub.id === activeSubject?.id;
+            return (
+              <button
+                key={sub.id}
+                onClick={() => {
+                  setSelectedSubjectId(sub.id);
+                  setModalSubject(sub);
+                  setIsNotesModalOpen(true);
+                }}
+                className={`p-3 rounded-xl border text-left transition-all cursor-pointer group hover:shadow-md ${
+                  isSelected
+                    ? 'border-teal-600 bg-teal-50/70 dark:bg-teal-950/40 text-stone-900 dark:text-stone-100 ring-2 ring-teal-500/40 shadow-xs'
+                    : 'border-stone-200/80 dark:border-stone-800 bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-300 hover:border-teal-400/60'
+                }`}
+                title={`Click to open Notes of ${sub.name}`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-xs font-bold text-teal-700 dark:text-teal-300">
+                    {sub.code}
+                  </span>
+                  <span className="text-[10px] font-mono text-stone-400">{sub.credits}C</span>
+                </div>
+                <div className="text-xs font-semibold truncate mt-1 group-hover:text-teal-600 dark:group-hover:text-teal-300 transition-colors" title={sub.name}>
+                  {sub.name}
+                </div>
+                <div className="mt-2 pt-1.5 border-t border-stone-100 dark:border-stone-800/80 flex items-center justify-between text-[10px] font-bold text-teal-700 dark:text-teal-300">
+                  <span className="flex items-center gap-1">
+                    <BookOpen className="w-3 h-3" />
+                    <span>View Notes</span>
+                  </span>
+                  <ChevronRight className="w-3 h-3 opacity-60 group-hover:translate-x-0.5 transition-transform" />
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* 3. Selected Subject Header Card */}
@@ -244,10 +281,31 @@ export const AcademicHub: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <button
+              onClick={() => {
+                setModalSubject(activeSubject);
+                setIsNotesModalOpen(true);
+              }}
+              className="px-4 py-2 rounded-xl text-xs font-bold bg-teal-700 hover:bg-teal-800 text-white transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              <span>Notes of {activeSubject.name}</span>
+            </button>
+
+            <a
+              href={OFFICIAL_FIRST_YEAR_DRIVE_LINK}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-2 rounded-xl text-xs font-bold bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 transition-all flex items-center gap-1.5 cursor-pointer border border-stone-200/80 dark:border-stone-700"
+            >
+              <ExternalLink className="w-3.5 h-3.5 text-teal-600" />
+              <span>Google Drive</span>
+            </a>
+
             <button
               onClick={() => setIsAddingNote(true)}
-              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-teal-700 hover:bg-teal-800 text-white transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+              className="px-3 py-2 rounded-xl text-xs font-bold bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 transition-all flex items-center gap-1.5 cursor-pointer border border-stone-200/80 dark:border-stone-700"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>+ Add Note</span>
@@ -659,6 +717,13 @@ export const AcademicHub: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* 6. Dedicated "Notes of [Subject Name]" Interface Modal */}
+      <SubjectNotesModal
+        isOpen={isNotesModalOpen}
+        onClose={() => setIsNotesModalOpen(false)}
+        subject={modalSubject || activeSubject}
+      />
     </div>
   );
 };

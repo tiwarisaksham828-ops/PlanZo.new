@@ -27,6 +27,10 @@ import {
 } from '../data/satiVidishaData';
 import { getBranchSemesterSubjects } from '../data/branchCurriculumData';
 import { FOUNDATION_ENGINEERING_SUBJECTS } from '../data/foundationSubjects';
+import {
+  FIRST_YEAR_SUBJECT_NOTES_CATALOG,
+  generateSubjectFolderDataFromCatalog,
+} from '../data/firstYearDetailedNotes';
 
 export interface BunkCalculation {
   percentage: number;
@@ -350,13 +354,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
   });
 
-  // 6. Subject-Wise Folders State (Official SATI Notes, PYQs, Lab Viva, Assignments)
+  // 6. Subject-Wise Folders State (Official 1st Year Notes & Curricula, PYQs, Lab Viva, Assignments)
   const [subjectFolders, setSubjectFolders] = useState<Record<string, SubjectFolderData>>(() => {
+    const initialFirstYearFolders: Record<string, SubjectFolderData> = {};
+    Object.values(FIRST_YEAR_SUBJECT_NOTES_CATALOG).forEach((detail) => {
+      const folder = generateSubjectFolderDataFromCatalog(detail);
+      initialFirstYearFolders[detail.subjectId] = folder;
+      initialFirstYearFolders[detail.subjectCode.toLowerCase()] = folder;
+      initialFirstYearFolders[detail.subjectCode] = folder;
+    });
+
     const saved = localStorage.getItem(STORAGE_KEYS.FOLDERS) || localStorage.getItem('planzo_folders_v3');
     if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
+      try {
+        const parsed = JSON.parse(saved);
+        // Merge so that all 1st year foundation subject notes are guaranteed to exist, while keeping user changes
+        return { ...initialFirstYearFolders, ...SATI_SUBJECT_FOLDERS_DATA, ...parsed };
+      } catch (e) {}
     }
-    return SATI_SUBJECT_FOLDERS_DATA;
+    return { ...SATI_SUBJECT_FOLDERS_DATA, ...initialFirstYearFolders };
   });
 
   // 7. Monthly Calendar Scheduled Tasks State
